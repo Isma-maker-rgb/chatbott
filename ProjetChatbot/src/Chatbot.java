@@ -71,9 +71,14 @@ public class Chatbot {
 
 
     static private String repondre(String question) {
+
+        System.out.println("DEBUG : question = " + question);
+
         //ArrayList<Integer> reponsesCandidates;
         //ArrayList<Integer> reponsesSelectionnees;
         ArrayList<Integer> reponsesCandidates = Utilitaire.constructionReponsesCandidates(question, indexThemes, motsOutils);
+        
+        System.out.println("DEBUG : reponsesCandidates = " + reponsesCandidates);
 
         if (reponsesCandidates.isEmpty()) {
             return MESSAGE_IGNORANCE;

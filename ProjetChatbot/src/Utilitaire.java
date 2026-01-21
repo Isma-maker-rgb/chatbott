@@ -347,15 +347,20 @@ public class Utilitaire {
         // remarque 3 : on aurait pu calculer directement une intersection au lieu d'une fusion et se passer de maxOccurences mais on
         // souhaite pouvoir garder la possibilité d'assouplir par la suite la contrainte sur la présence de l'intégralité
         // des mots de la question dans la réponse }
+
         ArrayList<String> motsQuestion = decoupeEnMots(question);
+        System.out.println("DEBUG : motsQuestion = " + motsQuestion);
         ArrayList<Integer> listeFusionnee = new ArrayList<>();
         int nbMotsNonOutils = 0;
 
         for(String mot : motsQuestion){
             if(! existeChaineDicho(motsOutils,mot)) {
+                System.out.println("DEBUG : inside loop for(String mot : motsQuestion){    if(! existeChaineDicho(motsOutils,mot)) {    at INDEX  = " + nbMotsNonOutils);
                 nbMotsNonOutils++;
                 ArrayList<Integer> sorties = IndexReponses.rechercherSorties(mot);
+                System.out.println("DEBUG : sorties = " + sorties);
                 listeFusionnee = fusion(listeFusionnee, sorties);
+                System.out.println("DEBUG : listeFusionnee = " + listeFusionnee);
             }
         }
         return new ArrayList<Integer>();
