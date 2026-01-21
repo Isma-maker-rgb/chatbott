@@ -136,11 +136,18 @@ public class Index {
         // {}=>{résultat = les sorties associées à l'entrée entree
         // si l'entrée entree n'existe pas, une ArrayList vide est retournée.
         // remarque : utilise la fonction rechercherEntree de Index}
+
+        System.out.println("DEBUG : entree = " + entree);
+
         int i = rechercherEntree(entree);
 
+        System.out.println("DEBUG : i = " + i);
+
         if (i >= 0){
+            System.out.println("DEBUG : i is positive : table.get(i).getSorties() = " + table.get(i).getSorties());
             return table.get(i).getSorties();
         } else {
+            System.out.println("DEBUG : i is NOT positive : return empty list = " + ArrayList<Integer>());
             return new ArrayList<Integer>();
         }
     }
