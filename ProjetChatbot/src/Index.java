@@ -147,7 +147,7 @@ public class Index {
             System.out.println("DEBUG : i is positive : table.get(i).getSorties() = " + table.get(i).getSorties());
             return table.get(i).getSorties();
         } else {
-            System.out.println("DEBUG : i is NOT positive : return empty list = " + ArrayList<Integer>());
+            System.out.println("DEBUG : i is NOT positive : return empty list = ");
             return new ArrayList<Integer>();
         }
     }
