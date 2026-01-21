@@ -4,110 +4,81 @@ import java.util.Scanner;
 public class Chatbot {
 
     private static final String MESSAGE_IGNORANCE = "Je ne sais pas.";
-    private static final String MESSAGE_APPRENTISSAGE = "Je vais te l'apprendre.";
     private static final String MESSAGE_BIENVENUE = "J'attends tes questions de culture générale.";
     private static final String MESSAGE_QUITTER = "Au revoir.";
-    private static final String MESSAGE_INVITATION = "Je t'écoute.";
-    private static final String MESSAGE_CONFIRMATION = "Très bien, c'est noté.";
 
-    private static Index indexThemes; // index pour trouver rapidement les réponses à partir des mots NON outils de la question
-    private static Index indexFormes; // index pour trouver rapidement les formes de réponse possibles à partir des mots-outils de la question
+    private static Index indexThemes;
+    private static Index indexFormes;
 
-    static private ArrayList<String> motsOutils; // vecteur trié des mots outils
-    static private ArrayList<String> reponses; // vecteur des réponses
-    private static ArrayList<String> formesReponses; //vecteur des formes de réponses
-    private static Thesaurus thesaurus; //thésaurus
+    static private ArrayList<String> motsOutils;
+    static private ArrayList<String> reponses;
+    private static ArrayList<String> formesReponses;
 
     public static void main(String[] args) {
 
-        // initialisation du vecteur des mots outils
+        System.out.println("Chargement des données...");
+
+        // 1. Initialisation
         motsOutils = Utilitaire.lireMotsOutils("mots-outils.txt");
-        // tri du vecteur des mots outils
         Utilitaire.trierChaines(motsOutils);
 
-        // initialisation du vecteur des réponses
         reponses = Utilitaire.lireReponses("reponses.txt");
-        //reponses = Utilitaire.lireReponses("mini_reponses.txt");
 
-        // initialisation du thésaurus (partie 2)
-        //thesaurus = ...
-
-        // construction de l'index pour retrouver rapidement les réponses sur leurs thématiques
+        // 2. Construction Index Contenu (Etape 1)
         indexThemes = Utilitaire.constructionIndexReponses(reponses, motsOutils);
-        indexThemes.afficher();
 
-        // construction de la table des formes de réponses
-        formesReponses = Utilitaires.contructionIndexReponses(reponses, motsOutils);
-        //System.out.println(formesReponses);
-
-        // initialisation du vecteur des questions/réponses idéales
+        // 3. Construction Index Forme (Etape 2)
+        // D'abord on liste toutes les formes possibles existant dans reponses.txt
+        formesReponses = Utilitaire.constructionTableFormes(reponses, motsOutils);
+        
+        // Ensuite on apprend quel type de question mène à quel type de forme de réponse
         ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
-        //ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("mini_questions-reponses.txt");
+        indexFormes = Utilitaire.constructionIndexFormes(questionsReponses, formesReponses, motsOutils);
 
-        // construction de l'index pour retrouver rapidement les formes possibles de réponses à partir des mots outils de la question
-        indexFormes = Utilitaire.contructionIndexFormes(questionsReponses, formesReponses, motsOutils);
-        //indexFormes.afficher();
-
-        String reponse = "";
-        String entreeUtilisateur = ""; // la dernière entrée de l'utilisateur
-
-
+        // 4. Boucle principale
         Scanner lecteur = new Scanner(System.in);
-        System.out.println();
-        System.out.print("> ");
         System.out.println(MESSAGE_BIENVENUE);
 
-        do { // on attend des questions
+        String entreeUtilisateur = "";
+        do {
             System.out.print("> ");
-            entreeUtilisateur = lecteur.nextLine();
-            if (entreeUtilisateur.compareTo(MESSAGE_QUITTER) != 0) { //tant que l'utilisateur ne veut pas arrêter
-                reponse = repondre(entreeUtilisateur);
-                System.out.println("> " + reponse);
+            if (lecteur.hasNextLine()) {
+                entreeUtilisateur = lecteur.nextLine();
+                
+                if (!entreeUtilisateur.equalsIgnoreCase(MESSAGE_QUITTER)) {
+                    String reponse = repondre(entreeUtilisateur);
+                    System.out.println("> " + reponse);
+                }
+            } else {
+                break; // Fin du flux
             }
-        } while (entreeUtilisateur.compareToIgnoreCase(MESSAGE_QUITTER) != 0);
-
-
+        } while (!entreeUtilisateur.equalsIgnoreCase(MESSAGE_QUITTER));
+        
+        System.out.println(MESSAGE_QUITTER);
+        lecteur.close();
     }
 
-
     static private String repondre(String question) {
-        //ArrayList<Integer> reponsesCandidates;
-        //ArrayList<Integer> reponsesSelectionnees;
+        // --- ETAPE 1 : Recherche sur le thème ---
         ArrayList<Integer> reponsesCandidates = Utilitaire.constructionReponsesCandidates(question, indexThemes, motsOutils);
 
         if (reponsesCandidates.isEmpty()) {
             return MESSAGE_IGNORANCE;
         }
 
-        String resultat = "";
-
-        for (int id : reponsesCandidates) {
-            resultat = resultat + reponses.get(id) + "\n";
-        }
-        /*ArrayList<Integer> reponsesCandidates = Utilitaire.constructionReponsesCandidates(question, indexThemes, motsOutils);
-
-        if (reponsesCandidates.isEmpty()) {
-            return MESSAGE_IGNORANCE; //
-        }
-
+        // --- ETAPE 2 : Filtrage sur la forme ---
         ArrayList<Integer> reponsesSelectionnees = Utilitaire.selectionReponsesCandidates(
-            question, reponsesCandidates, indexFormes, reponses, formesReponses, motsOutils);
+                question, reponsesCandidates, indexFormes, reponses, formesReponses, motsOutils);
 
+        // Si l'étape 2 filtre tout, on renvoie "Je ne sais pas" (ou on pourrait renvoyer une réponse de l'étape 1 par défaut)
         if (reponsesSelectionnees.isEmpty()) {
-            return MESSAGE_IGNORANCE; //
+             // Optionnel : décommenter ligne suivante pour être plus souple et répondre même si la forme est bizarre
+             // return reponses.get(reponsesCandidates.get(0)); 
+            return MESSAGE_IGNORANCE;
         }
 
-            int choix = (int) (Math.random() * reponses.size());
-        return (reponses.get(choix));
-    }*/
-
-        return resultat.trim();
+        // Choix aléatoire parmi les réponses restantes
+        int choix = (int) (Math.random() * reponsesSelectionnees.size());
+        return reponses.get(reponsesSelectionnees.get(choix));
     }
-
-    // partie 2
-    static private String repondreEnContexte(String question, String questionPrecedente) {
-        return "";
-    }
-
-
 }

@@ -2,155 +2,113 @@ import java.util.ArrayList;
 
 public class Index {
 
-    // un index est un vecteur d'EntreeIndex
-    private class EntreeIndex {
-
-        // une EntreeIndex associe un vecteur trié d'entiers (sorties) à une String (entree)
+    // Classe interne : Une entrée de l'index (un mot) associée à une liste d'identifiants (sorties)
+    private class EntreeIndex implements Comparable<EntreeIndex> {
         private String entree;
         private ArrayList<Integer> sorties;
+
+        public EntreeIndex(String entree) {
+            this.entree = entree;
+            this.sorties = new ArrayList<>();
+        }
 
         public ArrayList<Integer> getSorties() {
             return sorties;
         }
 
+        // Recherche dichotomique d'un entier dans la liste triée 'sorties'
+        // Retourne l'index si trouvé, sinon -(point d'insertion) - 1
+        public int rechercherSortie(Integer valeur) {
+            int inf = 0;
+            int sup = sorties.size() - 1;
 
-        //constructeur
-        public EntreeIndex(String entree) {
-            this.entree = entree;
-            sorties = new ArrayList<>();
+            while (inf <= sup) {
+                int m = (inf + sup) / 2;
+                int valM = sorties.get(m);
+
+                if (valM == valeur) return m;
+                if (valM < valeur) inf = m + 1;
+                else sup = m - 1;
+            }
+            return -(inf + 1); // Code pour dire "pas trouvé, mais à insérer ici"
         }
 
-
-        public int rechercherSortie(Integer sortie)
-        {
-            //{}=>{recherche dichotomique de sortie dans sorties (triée dans l'ordre croissant)
-            // résultat = l'indice de sortie dans sorties si trouvé, - l'indice d'insertion si non trouvé }
-            if (sorties.size() == 0){
-                return 0;
-            }
-
-            if (sorties.get(sorties.size()-1) < sortie)
-            {
-                return -sorties.size();
-            }
-            else
-            {
-                int inf = 0;
-                int sup = sorties.size() - 1;
-                int m;
-                while (inf < sup)
-                {
-                    m = (inf + sup) / 2;
-                    if (sorties.get(m) >= sortie) {sup = m;}
-                    else {inf = m + 1;}
-                }
-                if (sorties.get(sup) == sortie) {return sup;}
-                else {return -sup;}
-            }
-        }
-
-
-        public void ajouterSortie(Integer sortie) {
-            //{}=>{insère sortie à la bonne place dans sorties (triée dans l'ordre croissant)
-            // remarque : utilise rechercherSortie de EntreeIndex }
-            int pos = rechercherSortie(sortie);
+        // Ajoute un identifiant de manière triée
+        public void ajouterSortie(Integer identifiant) {
+            int pos = rechercherSortie(identifiant);
+            // Si pos < 0, l'élément n'existe pas, on l'ajoute au bon endroit
             if (pos < 0) {
-                int indexInsertion = -pos;
-                sorties.add(indexInsertion, sortie);
+                int indexInsertion = -(pos + 1);
+                sorties.add(indexInsertion, identifiant);
             }
         }
 
+        @Override
+        public int compareTo(EntreeIndex o) {
+            return this.entree.compareTo(o.entree);
+        }
 
         @Override
         public String toString() {
-            return entree + "=>" + sorties;
+            return entree + " => " + sorties;
         }
     }
 
-    //Un vecteur d'EntreeIndex trié sur l'attribut entree (String) des EntreeIndex
+    // L'index est une liste d'EntreeIndex, triée par ordre alphabétique des mots
     private ArrayList<EntreeIndex> table;
 
-    //constructeur
     public Index() {
-        table = new ArrayList<>();
+        this.table = new ArrayList<>();
     }
 
-
-    public int rechercherEntree(String entree)
-    {
-        //{}=>  {recherche dichotomique de entree dans table (triée dans l'ordre lexicographique des attributs entree des EntreeIndex) }
-        //résultat =  l'indice de entree dans table si trouvé et -l'indice d'insertion sinon }
-        if (table.isEmpty()) {
-            return -1;
-        }
-
-        if (entree.compareTo(table.get(table.size()-1).entree) > 0) {
-            return -(table.size()+1);
-        }
-
+    // Recherche dichotomique de l'entrée (le mot) dans la table
+    public int rechercherEntree(String mot) {
         int inf = 0;
         int sup = table.size() - 1;
-        int m;
 
-        while (inf < sup) {
-            m = (inf + sup) / 2;
-            if (entree.compareTo(table.get(m).entree) <= 0) {
-                sup = m;
-            } else {
-                inf = m + 1;
-            }
-        }
+        while (inf <= sup) {
+            int m = (inf + sup) / 2;
+            EntreeIndex element = table.get(m);
+            int comp = mot.compareTo(element.entree);
 
-        if (entree.compareTo(table.get(sup).entree) == 0) {
-            return sup;
-        } else {
-            return -(sup + 1);
+            if (comp == 0) return m; // Trouvé
+            if (comp > 0) inf = m + 1;
+            else sup = m - 1;
         }
+        return -(inf + 1); // Pas trouvé
     }
 
-
-    public void ajouterSortieAEntree(String entree, Integer sortie) {
-        // {}=>{ajoute l'entier sortie dans les sorties associées à l'entrée entree
-        // si l'entrée entree n'existe pas elle est créée.
-        // ne fait rien si sortie était déjà présente dans ses sorties.
-        // remarque : utilise la fonction rechercherEntree de Index et la procedure ajouterSortie de EntreeIndex}
-        int pos = rechercherEntree(entree);
-        EntreeIndex ei;
-//        if (pos == 0 && table.size() == 0){
-//            ei = new EntreeIndex(entree);
-//            table.add(0, ei);
-//        }
+    // Ajoute une association mot -> identifiant
+    public void ajouterSortieAEntree(String mot, Integer id) {
+        int pos = rechercherEntree(mot);
+        EntreeIndex entreeIndex;
 
         if (pos >= 0) {
-            ei = table.get(pos);
+            // Le mot existe déjà
+            entreeIndex = table.get(pos);
         } else {
-            ei = new EntreeIndex(entree);
-            int indexInsertion = -(pos+1);
-            table.add(indexInsertion, ei);
+            // Le mot n'existe pas, on le crée et on l'insère au bon endroit
+            entreeIndex = new EntreeIndex(mot);
+            int indexInsertion = -(pos + 1);
+            table.add(indexInsertion, entreeIndex);
         }
-        ei.ajouterSortie(sortie);
+        // On ajoute l'identifiant à ce mot
+        entreeIndex.ajouterSortie(id);
     }
 
-
-    public ArrayList<Integer> rechercherSorties(String entree) {
-        // {}=>{résultat = les sorties associées à l'entrée entree
-        // si l'entrée entree n'existe pas, une ArrayList vide est retournée.
-        // remarque : utilise la fonction rechercherEntree de Index}
-        int i = rechercherEntree(entree);
-
-        if (i >= 0){
-            return table.get(i).getSorties();
+    // Récupère la liste des IDs associés à un mot
+    public ArrayList<Integer> rechercherSorties(String mot) {
+        int pos = rechercherEntree(mot);
+        if (pos >= 0) {
+            return table.get(pos).getSorties();
         } else {
-            return new ArrayList<Integer>();
+            return new ArrayList<>(); // Retourne liste vide si mot inconnu
         }
     }
 
     public void afficher() {
-        // {}=>{affiche la table de l'index}
-        for (int i = 0; i < table.size(); i++) {
-            System.out.println(this.table.get(i));
+        for (EntreeIndex e : table) {
+            System.out.println(e);
         }
     }
-
-
 }
