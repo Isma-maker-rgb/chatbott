@@ -41,10 +41,10 @@ public class Chatbot {
     }
 
     private static void initialiser() {
-        motsOutils = Utilitaire.lireMotsOutils("mots-outils.txt");
+        motsOutils = Utilitaire.lireMotsOutils("../mots-outils.txt");
         Utilitaire.trierChaines(motsOutils);
-        thesaurus = new Thesaurus("thesaurus.txt");
-        reponses = Utilitaire.lireReponses("reponses.txt");
+        thesaurus = new Thesaurus("../thesaurus.txt");
+        reponses = Utilitaire.lireReponses("../reponses.txt");
         
         indexThemes = new Index();
         for (int i = 0; i < reponses.size(); i++) {
@@ -53,13 +53,13 @@ public class Chatbot {
         }
 
         formesReponses = Utilitaire.constructionTableFormes(reponses, motsOutils);
-        ArrayList<String> qr = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
+        ArrayList<String> qr = Utilitaire.lireQuestionsReponses("../questions-reponses.txt");
         indexFormes = Utilitaire.constructionIndexFormes(qr, formesReponses, motsOutils);
     }
 
     private static void apprendre(String q, String r) {
-        Utilitaire.sauvegarderDansFichier(r, "reponses.txt");
-        Utilitaire.sauvegarderDansFichier(q + " ? " + r, "questions-reponses.txt");
+        Utilitaire.sauvegarderDansFichier(r, "../reponses.txt");
+        Utilitaire.sauvegarderDansFichier(q + " ? " + r, "../questions-reponses.txt");
         
         reponses.add(r);
         int id = reponses.size() - 1;
