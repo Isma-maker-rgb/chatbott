@@ -19,10 +19,10 @@ public class Chatbot {
         System.out.println("Chargement des données...");
 
         // 1. Initialisation
-        motsOutils = Utilitaire.lireMotsOutils("mots-outils.txt");
+        motsOutils = Utilitaire.lireMotsOutils("../mots-outils.txt");
         Utilitaire.trierChaines(motsOutils);
 
-        reponses = Utilitaire.lireReponses("reponses.txt");
+        reponses = Utilitaire.lireReponses("../reponses.txt");
 
         // 2. Construction Index Contenu (Etape 1)
         indexThemes = Utilitaire.constructionIndexReponses(reponses, motsOutils);
@@ -32,7 +32,7 @@ public class Chatbot {
         formesReponses = Utilitaire.constructionTableFormes(reponses, motsOutils);
         
         // Ensuite on apprend quel type de question mène à quel type de forme de réponse
-        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
+        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("../questions-reponses.txt");
         indexFormes = Utilitaire.constructionIndexFormes(questionsReponses, formesReponses, motsOutils);
 
         // 4. Boucle principale
