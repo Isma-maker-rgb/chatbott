@@ -42,11 +42,11 @@ public class Chatbot {
 
         // initialisation du vecteur des questions/réponses idéales
         ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
-        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("mini_questions-reponses.txt");
+        //ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("mini_questions-reponses.txt");
 
         // construction de l'index pour retrouver rapidement les formes possibles de réponses à partir des mots outils de la question
         indexFormes = Utilitaire.constructionIndexFormes(questionsReponses, formesReponses, motsOutils);
-        //indexFormes.afficher();
+        indexFormes.afficher();
 
         String reponse = "";
         String entreeUtilisateur = ""; // la dernière entrée de l'utilisateur
