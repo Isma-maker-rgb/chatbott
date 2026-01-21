@@ -27,7 +27,7 @@ public class Chatbot {
 
         // initialisation du vecteur des réponses
         reponses = Utilitaire.lireReponses("reponses.txt");
-        //reponses = Utilitaire.lireReponses("mini_reponses.txt");
+        reponses = Utilitaire.lireReponses("mini_reponses.txt");
 
         // initialisation du thésaurus (partie 2)
         //thesaurus = ...
@@ -38,11 +38,11 @@ public class Chatbot {
 
         // construction de la table des formes de réponses
         formesReponses = Utilitaires.contructionIndexReponses(reponses, motsOutils);
-        //System.out.println(formesReponses);
+        System.out.println(formesReponses);
 
         // initialisation du vecteur des questions/réponses idéales
         ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
-        //ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("mini_questions-reponses.txt");
+        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("mini_questions-reponses.txt");
 
         // construction de l'index pour retrouver rapidement les formes possibles de réponses à partir des mots outils de la question
         indexFormes = Utilitaire.contructionIndexFormes(questionsReponses, formesReponses, motsOutils);
