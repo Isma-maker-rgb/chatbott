@@ -100,14 +100,19 @@ public class Utilitaire {
 
     // --- ETAPE 1 : CONTENU ---
 
-    public static Index constructionIndexReponses(ArrayList<String> reponses, ArrayList<String> motsOutils) {
+    // --- MODIFICATION DANS UTILITAIRE.JAVA ---
+
+    // 1. On modifie l'indexation des réponses pour utiliser le thésaurus
+    public static Index constructionIndexReponses(ArrayList<String> reponses, ArrayList<String> motsOutils, Thesaurus thesaurus) {
         Index index = new Index();
         for (int i = 0; i < reponses.size(); i++) {
             ArrayList<String> mots = decoupeEnMots(reponses.get(i));
             for (String mot : mots) {
-                // Si ce n'est pas un mot outil, on l'indexe
-                if (!existeChaineDicho(motsOutils, mot)) {
-                    index.ajouterSortieAEntree(mot, i);
+                // TRANSFORMATION ICI
+                String motCanonique = thesaurus.rechercherSortiePourEntree(mot);
+                
+                if (!existeChaineDicho(motsOutils, motCanonique)) {
+                    index.ajouterSortieAEntree(motCanonique, i);
                 }
             }
         }
@@ -156,21 +161,23 @@ public class Utilitaire {
         return res;
     }
 
-    public static ArrayList<Integer> constructionReponsesCandidates(String question, Index indexReponses, ArrayList<String> motsOutils) {
+    // 2. On modifie la recherche des candidats pour utiliser le thésaurus
+    public static ArrayList<Integer> constructionReponsesCandidates(String question, Index indexReponses, ArrayList<String> motsOutils, Thesaurus thesaurus) {
         ArrayList<String> motsQuestion = decoupeEnMots(question);
         ArrayList<Integer> listeFusionnee = new ArrayList<>();
-        int nbMotsNonOutils = 0;
+        int nbMotsSignificatifs = 0;
 
         for (String mot : motsQuestion) {
-            if (!existeChaineDicho(motsOutils, mot)) {
-                nbMotsNonOutils++;
-                ArrayList<Integer> sorties = indexReponses.rechercherSorties(mot);
+            // TRANSFORMATION ICI
+            String motCanonique = thesaurus.rechercherSortiePourEntree(mot);
+            
+            if (!existeChaineDicho(motsOutils, motCanonique)) {
+                nbMotsSignificatifs++;
+                ArrayList<Integer> sorties = indexReponses.rechercherSorties(motCanonique);
                 listeFusionnee = fusion(listeFusionnee, sorties);
             }
         }
-        
-        // On cherche les réponses qui contiennent TOUS les mots significatifs (seuil = nbMotsNonOutils)
-        return maxOccurences(listeFusionnee, nbMotsNonOutils);
+        return maxOccurences(listeFusionnee, nbMotsSignificatifs);
     }
 
     // --- ETAPE 2 : FORME ---
@@ -300,5 +307,27 @@ public class Utilitaire {
         // Si le filtrage par forme est trop strict et renvoie vide, on peut décider
         // de renvoyer les candidats de l'étape 1 (mais le sujet demande d'être strict)
         return resultatsFinaux;
+    }
+
+    public static void sauvegarderDansFichier(String contenu, String nomFichier) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(nomFichier, true))) {
+            writer.write(contenu);
+            writer.newLine();
+        } catch (IOException e) {
+            System.err.println("Erreur d'écriture : " + e.getMessage());
+        }
+    }
+
+    // Nouvelle méthode pour extraire les mots-clés d'une phrase en utilisant le thésaurus
+    public static ArrayList<String> extraireMotsCles(String phrase, ArrayList<String> motsOutils, Thesaurus thesaurus) {
+        ArrayList<String> mots = decoupeEnMots(phrase);
+        ArrayList<String> resultat = new ArrayList<>();
+        for (String m : mots) {
+            String canonique = thesaurus.rechercherSortiePourEntree(m.toLowerCase());
+            if (!existeChaineDicho(motsOutils, canonique)) {
+                resultat.add(canonique);
+            }
+        }
+        return resultat;
     }
 }

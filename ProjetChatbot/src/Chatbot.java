@@ -2,83 +2,100 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Chatbot {
-
     private static final String MESSAGE_IGNORANCE = "Je ne sais pas.";
-    private static final String MESSAGE_BIENVENUE = "J'attends tes questions de culture générale.";
-    private static final String MESSAGE_QUITTER = "Au revoir.";
-
+    private static final String MESSAGE_APPRENTISSAGE = "Je vais te l'apprendre.";
+    
     private static Index indexThemes;
     private static Index indexFormes;
-
-    static private ArrayList<String> motsOutils;
-    static private ArrayList<String> reponses;
+    private static ArrayList<String> motsOutils;
+    private static ArrayList<String> reponses;
     private static ArrayList<String> formesReponses;
+    private static Thesaurus thesaurus;
+
+    private static String derniereQuestionPosee = "";
+    private static ArrayList<String> contexteMots = new ArrayList<>();
 
     public static void main(String[] args) {
+        chargerInitialisation();
+        Scanner sc = new Scanner(System.in);
+        System.out.println("J'attends tes questions de culture générale.");
 
-        System.out.println("Chargement des données...");
-
-        // 1. Initialisation
-        motsOutils = Utilitaire.lireMotsOutils("../mots-outils.txt");
-        Utilitaire.trierChaines(motsOutils);
-
-        reponses = Utilitaire.lireReponses("../reponses.txt");
-
-        // 2. Construction Index Contenu (Etape 1)
-        indexThemes = Utilitaire.constructionIndexReponses(reponses, motsOutils);
-
-        // 3. Construction Index Forme (Etape 2)
-        // D'abord on liste toutes les formes possibles existant dans reponses.txt
-        formesReponses = Utilitaire.constructionTableFormes(reponses, motsOutils);
-        
-        // Ensuite on apprend quel type de question mène à quel type de forme de réponse
-        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("../questions-reponses.txt");
-        indexFormes = Utilitaire.constructionIndexFormes(questionsReponses, formesReponses, motsOutils);
-
-        // 4. Boucle principale
-        Scanner lecteur = new Scanner(System.in);
-        System.out.println(MESSAGE_BIENVENUE);
-
-        String entreeUtilisateur = "";
-        do {
+        while (true) {
             System.out.print("> ");
-            if (lecteur.hasNextLine()) {
-                entreeUtilisateur = lecteur.nextLine();
-                
-                if (!entreeUtilisateur.equalsIgnoreCase(MESSAGE_QUITTER)) {
-                    String reponse = repondre(entreeUtilisateur);
-                    System.out.println("> " + reponse);
+            String entree = sc.nextLine().trim();
+            if (entree.equalsIgnoreCase("Au revoir")) break;
+
+            if (entree.equalsIgnoreCase(MESSAGE_APPRENTISSAGE)) {
+                if (derniereQuestionPosee.isEmpty()) {
+                    System.out.println("> Pose-moi une question d'abord !");
+                } else {
+                    System.out.println("> Je t'écoute.");
+                    System.out.print("> ");
+                    String nouvelleRep = sc.nextLine().trim();
+                    apprendre(derniereQuestionPosee, nouvelleRep);
+                    System.out.println("> Très bien, c'est noté.");
                 }
             } else {
-                break; // Fin du flux
+                derniereQuestionPosee = entree;
+                System.out.println("> " + repondreEnContexte(entree));
             }
-        } while (!entreeUtilisateur.equalsIgnoreCase(MESSAGE_QUITTER));
-        
-        System.out.println(MESSAGE_QUITTER);
-        lecteur.close();
+        }
     }
 
-    static private String repondre(String question) {
-        // --- ETAPE 1 : Recherche sur le thème ---
-        ArrayList<Integer> reponsesCandidates = Utilitaire.constructionReponsesCandidates(question, indexThemes, motsOutils);
+    private static void chargerInitialisation() {
+        motsOutils = Utilitaire.lireMotsOutils("mots-outils.txt");
+        Utilitaire.trierChaines(motsOutils);
+        thesaurus = new Thesaurus("thesaurus.txt");
+        reponses = Utilitaire.lireReponses("reponses.txt");
+        
+        // On construit l'index avec le thésaurus (Étape 2.1)
+        indexThemes = new Index();
+        for (int i = 0; i < reponses.size(); i++) {
+            ArrayList<String> cles = Utilitaire.extraireMotsCles(reponses.get(i), motsOutils, thesaurus);
+            for (String cle : cles) indexThemes.ajouterSortieAEntree(cle, i);
+        }
+        
+        // Initialisation formes (Partie 1)
+        formesReponses = Utilitaire.constructionTableFormes(reponses, motsOutils);
+        ArrayList<String> qr = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
+        indexFormes = Utilitaire.constructionIndexFormes(qr, formesReponses, motsOutils);
+    }
 
-        if (reponsesCandidates.isEmpty()) {
-            return MESSAGE_IGNORANCE;
+    private static void apprendre(String q, String r) {
+        Utilitaire.sauvegarderDansFichier(r, "reponses.txt");
+        Utilitaire.sauvegarderDansFichier(q + " ? " + r, "questions-reponses.txt");
+        
+        reponses.add(r);
+        int id = reponses.size() - 1;
+        // Mise à jour de l'index sans tout recharger (OPTIMISÉ)
+        ArrayList<String> cles = Utilitaire.extraireMotsCles(r, motsOutils, thesaurus);
+        for (String cle : cles) indexThemes.ajouterSortieAEntree(cle, id);
+    }
+
+    private static String repondreEnContexte(String question) {
+        ArrayList<String> motsSignificatifs = Utilitaire.extraireMotsCles(question, motsOutils, thesaurus);
+        
+        // GESTION DU CONTEXTE (Étape 3)
+        if (motsSignificatifs.size() <= 1 && !contexteMots.isEmpty()) {
+            for (String m : contexteMots) {
+                if (!motsSignificatifs.contains(m)) motsSignificatifs.add(m);
+            }
+        } else {
+            contexteMots = new ArrayList<>(motsSignificatifs);
         }
 
-        // --- ETAPE 2 : Filtrage sur la forme ---
-        ArrayList<Integer> reponsesSelectionnees = Utilitaire.selectionReponsesCandidates(
-                question, reponsesCandidates, indexFormes, reponses, formesReponses, motsOutils);
-
-        // Si l'étape 2 filtre tout, on renvoie "Je ne sais pas" (ou on pourrait renvoyer une réponse de l'étape 1 par défaut)
-        if (reponsesSelectionnees.isEmpty()) {
-             // Optionnel : décommenter ligne suivante pour être plus souple et répondre même si la forme est bizarre
-             // return reponses.get(reponsesCandidates.get(0)); 
-            return MESSAGE_IGNORANCE;
+        // RECHERCHE
+        ArrayList<Integer> candidats = new ArrayList<>();
+        for (String m : motsSignificatifs) {
+            candidats = Utilitaire.fusion(candidats, indexThemes.rechercherSorties(m));
         }
+        candidats = Utilitaire.maxOccurences(candidats, motsSignificatifs.size());
 
-        // Choix aléatoire parmi les réponses restantes
-        int choix = (int) (Math.random() * reponsesSelectionnees.size());
-        return reponses.get(reponsesSelectionnees.get(choix));
+        if (candidats.isEmpty()) return MESSAGE_IGNORANCE;
+        
+        // Sélection par forme (Partie 1)
+        ArrayList<Integer> selection = Utilitaire.selectionReponsesCandidates(question, candidats, indexFormes, reponses, formesReponses, motsOutils);
+        
+        return reponses.get(selection.isEmpty() ? candidats.get(0) : selection.get(0));
     }
 }
