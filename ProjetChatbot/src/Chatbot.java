@@ -37,7 +37,7 @@ public class Chatbot {
         indexThemes.afficher();
 
         // construction de la table des formes de réponses
-        //formesReponses = ...
+        formesReponses = Utilitaires.contructionIndexReponses(reponses, motsOutils);
         //System.out.println(formesReponses);
 
         // initialisation du vecteur des questions/réponses idéales
@@ -45,7 +45,7 @@ public class Chatbot {
         //ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("mini_questions-reponses.txt");
 
         // construction de l'index pour retrouver rapidement les formes possibles de réponses à partir des mots outils de la question
-        //indexFormes = ...
+        indexFormes = Utilitaire.contructionIndexFormes(questionsReponses, formesReponses, motsOutils);
         //indexFormes.afficher();
 
         String reponse = "";
