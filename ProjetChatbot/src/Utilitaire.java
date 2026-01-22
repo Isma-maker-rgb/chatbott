@@ -398,6 +398,47 @@ public class Utilitaire {
         // remarque 3 : pour trouver les formes de réponses qui répondent à la question, on utilise l'index des formes, et on sélectionne
         // en appelant maxOccurences (avec seuil = nombre des mots-outils de la question) celles associées dans l'index à tous les mots-outils de la question.
         // remarque 4 : seuls les NBMOTS_FORME premiers mots-outils de la question sont pris en compte}
+        ArrayList<String> motsQ = decoupeEnMots(question);
+        ArrayList<Integer> fusionFormes = new ArrayList<>();
+        int nbOutilsQ = 0;
+
+        for (String m : motsQ) {
+            if (nbOutilsQ >= NBMOTS_FORME) break;
+            if (existeChaineDicho(motsOutils, m)) {
+                String cle = m + "_" + nbOutilsQ;
+                ArrayList<Integer> sorties = IndexFormes.rechercherSorties(cle);
+                fusionFormes = fusion(fusionFormes, sorties);
+                nbOutilsQ++;
+            }
+        }
+
+        // On ne garde que les formes qui matchent TOUS les mots outils de la question
+        ArrayList<Integer> idsFormesCompatibles = maxOccurences(fusionFormes, nbOutilsQ);
+
+        // 2. Filtrer les candidats de l'étape 1
+        ArrayList<Integer> resultatsFinaux = new ArrayList<>();
+
+        for (Integer idRep : candidates) {
+            String texteReponse = reponses.get(idRep);
+            String formeCandidate = calculForme(texteReponse, motsOutils);
+            int idFormeCandidate = -1;
+            for(int i=0; i<formesReponses.size(); i++) {
+                if(formesReponses.get(i).equals(formeCandidate)) {
+                    idFormeCandidate = i;
+                }
+            }
+
+            // On garde si la forme de cette réponse fait partie des formes compatibles
+            // OU si aucune forme compatible n'a été trouvée (fallback, optionnel mais conseillé)
+            if (idsFormesCompatibles.contains(idFormeCandidate)) {
+                resultatsFinaux.add(idRep);
+                }
+            }
+
+        // Si le filtrage par forme est trop strict et renvoie vide, on peut décider
+        // de renvoyer les candidats de l'étape 1 (mais le sujet demande d'être strict)
+        return resultatsFinaux;
+        }
     }
 
     static public boolean reponseExiste(String reponse,
@@ -409,7 +450,7 @@ public class Utilitaire {
         // remarque 2 : Le vecteur reponses n'est pas trié. Afin d'éviter le coûteux parcours séquentiel du
         // vecteur, on utilise indexReponses pour trouver les réponses contenant tous les mots non outils de la
         // reponse, puis on vérifie si l'une d'entre elle est identique à reponse.}
-        ArrayList<Integer> candidats = constructionReponsesCandidates(reponse, indexReponses, motsOutils);
+        ArrayList<Integer> candidats = Utilitaire.constructionReponsesCandidates(reponse, indexReponses, motsOutils);
 
         for (Integer id : candidats) {
             if (reponses.get(id).equalsIgnoreCase(reponse)) {
@@ -435,28 +476,32 @@ public class Utilitaire {
         // on utilise indexFormes pour trouver les formes indexées par les mots-outils de la
         // question, puis on vérifie si l'une de ces formes est identique à la forme de reponse.
         // remarque 3 : seuls les NBMOTS_FORME premiers mots-outils de question sont pris en compte}
-        String forme = calculForme(reponse, motsOutils);
+        // 1. Calculer la forme de la réponse
+        String forme = Utilitaire.calculForme(reponse, motsOutils);
 
-        int idForme = rechercherChaine(formesReponses, forme);
+        // 2. Chercher son indice dans formesReponses
+        int idForme = Utilitaire.rechercherChaine(formesReponses, forme);
         if (idForme == -1) return false;
 
-        ArrayList<String> motsQ = decoupeEnMots(question);
+        // 3. Trouver les formes accessibles depuis la question
+        ArrayList<String> motsQ = Utilitaire.decoupeEnMots(question);
         ArrayList<Integer> fusionFormes = new ArrayList<>();
         int nbOutils = 0;
 
         for (String m : motsQ) {
-            if (nbOutils >= NBMOTS_FORME) break;
+            if (nbOutils >= Utilitaire.NBMOTS_FORME) break;
 
-            if (existeChaineDicho(motsOutils, m)) {
+            if (Utilitaire.existeChaineDicho(motsOutils, m)) {
                 String cle = m + "_" + nbOutils;
                 ArrayList<Integer> sorties = indexFormes.rechercherSorties(cle);
-                fusionFormes = fusion(fusionFormes, sorties);
+                fusionFormes = Utilitaire.fusion(fusionFormes, sorties);
                 nbOutils++;
             }
         }
 
-        ArrayList<Integer> formesCompatibles = maxOccurences(fusionFormes, nbOutils);
+        ArrayList<Integer> formesCompatibles = Utilitaire.maxOccurences(fusionFormes, nbOutils);
 
+        // 4. Vérifier si la forme de la réponse fait partie des compatibles
         return formesCompatibles.contains(idForme);
     }
 }

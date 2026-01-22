@@ -79,18 +79,14 @@ public class Chatbot {
             return MESSAGE_IGNORANCE;
         }
 
-        // --- ETAPE 2 : Filtrage sur la forme ---
         ArrayList<Integer> reponsesSelectionnees = Utilitaire.selectionReponsesCandidates(
                 question, reponsesCandidates, indexFormes, reponses, formesReponses, motsOutils);
 
         // Si l'étape 2 filtre tout, on renvoie "Je ne sais pas" (ou on pourrait renvoyer une réponse de l'étape 1 par défaut)
         if (reponsesSelectionnees.isEmpty()) {
-            // Optionnel : décommenter ligne suivante pour être plus souple et répondre même si la forme est bizarre
-            // return reponses.get(reponsesCandidates.get(0));
             return MESSAGE_IGNORANCE;
         }
 
-        // Choix aléatoire parmi les réponses restantes
         int choix = (int) (Math.random() * reponsesSelectionnees.size());
         return reponses.get(reponsesSelectionnees.get(choix));
     }
