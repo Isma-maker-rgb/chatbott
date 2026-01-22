@@ -438,7 +438,6 @@ public class Utilitaire {
         // Si le filtrage par forme est trop strict et renvoie vide, on peut décider
         // de renvoyer les candidats de l'étape 1 (mais le sujet demande d'être strict)
         return resultatsFinaux;
-        }
     }
 
     static public boolean reponseExiste(String reponse,
