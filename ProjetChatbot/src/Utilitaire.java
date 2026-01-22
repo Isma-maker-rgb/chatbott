@@ -1,331 +1,299 @@
-import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
 
+/**
+ * ============================================================
+ * CLASSE Utilitaire
+ * ============================================================
+ *
+ * Cette classe regroupe toutes les méthodes "outils" du projet.
+ *
+ * ➜ Elle ne stocke AUCUN état :
+ *    - toutes les méthodes sont statiques
+ *    - elle sert uniquement à effectuer des calculs
+ *
+ * Rôles principaux :
+ *  1) Manipulation de chaînes (tri, recherche)
+ *  2) Construction de l’index sur le contenu (étape 1)
+ *  3) Construction des réponses candidates
+ *  4) Calcul et gestion des formes (étape 2)
+ */
 public class Utilitaire {
 
-    private static final int NBMOTS_FORME = 5; // On ne regarde que les 5 premiers mots-outils
+    /* ============================================================
+     *  PARTIE 1 — OUTILS GÉNÉRAUX SUR LES CHAÎNES
+     * ============================================================
+     */
 
-    // --- LECTURE DES FICHIERS ---
+    /**
+     * Trie un tableau de chaînes par ordre lexicographique croissant.
+     *
+     * Pourquoi trier ?
+     * → pour permettre ensuite une recherche dichotomique
+     * → plus rapide qu’une recherche linéaire
+     *
+     * Algorithme utilisé : TRI PAR INSERTION
+     * - simple à comprendre
+     * - suffisant pour des tableaux de taille modérée
+     */
+    public static void trierChaines(String[] tab) {
 
-    public static ArrayList<String> lireMotsOutils(String nomFichier) {
-        ArrayList<String> liste = new ArrayList<>();
-        try (Scanner scanner = new Scanner(new FileInputStream(nomFichier))) {
-            while (scanner.hasNextLine()) {
-                String ligne = scanner.nextLine().trim();
-                if (!ligne.isEmpty()) liste.add(ligne);
-            }
-        } catch (IOException e) {
-            System.err.println("Erreur lecture " + nomFichier);
-        }
-        return liste;
-    }
+        // On commence au second élément
+        for (int i = 1; i < tab.length; i++) {
 
-    public static ArrayList<String> lireReponses(String nomFichier) {
-        return lireFichierLigneParLigne(nomFichier);
-    }
+            // Élément à insérer au bon endroit
+            String cle = tab[i];
 
-    public static ArrayList<String> lireQuestionsReponses(String nomFichier) {
-        return lireFichierLigneParLigne(nomFichier);
-    }
-
-    private static ArrayList<String> lireFichierLigneParLigne(String nomFichier) {
-        ArrayList<String> liste = new ArrayList<>();
-        try (Scanner scanner = new Scanner(new FileInputStream(nomFichier))) {
-            while (scanner.hasNextLine()) {
-                liste.add(scanner.nextLine());
-            }
-        } catch (IOException e) {
-            System.err.println("Erreur lecture " + nomFichier);
-        }
-        return liste;
-    }
-
-    // --- TRAITEMENT DES CHAINES ---
-
-    private static ArrayList<String> decoupeEnMots(String contenu) {
-        // Nettoyage : minuscule, et remplacement de tout ce qui n'est pas lettre/chiffre par espace
-        String chaine = contenu.toLowerCase();
-        // On remplace la ponctuation par des espaces
-        chaine = chaine.replace('\'', ' ').replace('"', ' ').replace('.', ' ')
-                       .replace(',', ' ').replace('?', ' ').replace('!', ' ')
-                       .replace(':', ' ').replace(';', ' ').replace('-', ' ')
-                       .replace('(', ' ').replace(')', ' ').replace('«', ' ')
-                       .replace('»', ' ');
-
-        String[] tab = chaine.split("\\s+"); // Split sur les espaces multiples
-        ArrayList<String> resultat = new ArrayList<>();
-        for (String s : tab) {
-            if (!s.isEmpty()) resultat.add(s);
-        }
-        return resultat;
-    }
-
-    // --- ALGORITHMES DE RECHERCHE ET TRI ---
-
-    public static void trierChaines(ArrayList<String> v) {
-        // Tri à bulles ou insertion simple pour l'exercice (Java a Collections.sort mais on fait "à la main")
-        // Ici j'utilise le tri par insertion pour la clarté
-        for (int i = 1; i < v.size(); i++) {
-            String cle = v.get(i);
+            // j va parcourir la partie déjà triée
             int j = i - 1;
-            while (j >= 0 && v.get(j).compareTo(cle) > 0) {
-                v.set(j + 1, v.get(j));
+
+            // Tant que j est valide et que l’élément est plus grand que la clé
+            while (j >= 0 && tab[j].compareTo(cle) > 0) {
+                tab[j + 1] = tab[j]; // décalage vers la droite
                 j--;
             }
-            v.set(j + 1, cle);
+
+            // Insertion de la clé à la bonne position
+            tab[j + 1] = cle;
         }
     }
 
-    private static boolean existeChaineDicho(ArrayList<String> lesChaines, String chaine) {
-        int inf = 0, sup = lesChaines.size() - 1;
+    /**
+     * Recherche dichotomique d’une chaîne dans un tableau trié.
+     *
+     * ⚠️ PRÉCONDITION :
+     * → le tableau doit être trié avant l’appel
+     *
+     * @return true si la chaîne est présente, false sinon
+     */
+    public static boolean existeChaineDicho(String[] tab, String s) {
+
+        int inf = 0;
+        int sup = tab.length - 1;
+
+        // Normalisation pour éviter les problèmes de casse
+        s = s.toLowerCase();
+
         while (inf <= sup) {
-            int m = (inf + sup) / 2;
-            int cmp = chaine.compareTo(lesChaines.get(m));
-            if (cmp == 0) return true;
-            if (cmp < 0) sup = m - 1;
-            else inf = m + 1;
+            int milieu = (inf + sup) / 2;
+
+            int comparaison = s.compareTo(tab[milieu]);
+
+            if (comparaison == 0) {
+                return true; // trouvé
+            }
+
+            if (comparaison > 0) {
+                inf = milieu + 1;
+            } else {
+                sup = milieu - 1;
+            }
         }
-        return false;
+        return false; // non trouvé
     }
 
-    public static boolean estUnNombre(String s) {
-        if (s == null || s.isEmpty()) return false;
-        for (char c : s.toCharArray()) {
-            if (!Character.isDigit(c)) return false;
-        }
-        return true;
-    }
+    /* ============================================================
+     *  PARTIE 2 — ÉTAPE 1 : INDEX SUR LE CONTENU (THÈME)
+     * ============================================================
+     */
 
-    // --- ETAPE 1 : CONTENU ---
+    /**
+     * Construit l’index sur le contenu.
+     *
+     * Principe :
+     *  - on parcourt toutes les réponses
+     *  - on découpe chaque réponse en mots
+     *  - on ignore les mots-outils
+     *  - on associe chaque mot significatif à l’identifiant
+     *    de la réponse dans laquelle il apparaît
+     *
+     * Exemple :
+     *  "Le téléphone a été inventé en 1876"
+     *  → "telephone" → [id]
+     *  → "inventer"  → [id]
+     */
+    public static Index constructionIndexReponses(
+            String[] reponses,
+            String[] motsOutils) {
 
-    // --- MODIFICATION DANS UTILITAIRE.JAVA ---
-
-    // 1. On modifie l'indexation des réponses pour utiliser le thésaurus
-    public static Index constructionIndexReponses(ArrayList<String> reponses, ArrayList<String> motsOutils, Thesaurus thesaurus) {
+        // Création de l’index vide
         Index index = new Index();
-        for (int i = 0; i < reponses.size(); i++) {
-            ArrayList<String> mots = decoupeEnMots(reponses.get(i));
-            for (String mot : mots) {
-                // TRANSFORMATION ICI
-                String motCanonique = thesaurus.rechercherSortiePourEntree(mot);
-                
-                if (!existeChaineDicho(motsOutils, motCanonique)) {
-                    index.ajouterSortieAEntree(motCanonique, i);
+
+        // Parcours de toutes les réponses
+        for (int idReponse = 0; idReponse < reponses.length; idReponse++) {
+
+            // Découpage de la réponse en mots
+            StringTokenizer tokenizer =
+                    new StringTokenizer(
+                            reponses[idReponse].toLowerCase(),
+                            " .,;:!?"
+                    );
+
+            // Parcours des mots de la réponse
+            while (tokenizer.hasMoreTokens()) {
+
+                // Récupération du mot
+                String mot = tokenizer.nextToken();
+
+                // Normalisation via le thésaurus
+                mot = Thesaurus.getFormeCanonique(mot);
+
+                // Si le mot n’est PAS un mot-outil
+                if (!existeChaineDicho(motsOutils, mot)) {
+
+                    // Association mot → id de la réponse
+                    index.ajouterSortieAEntree(mot, idReponse);
                 }
             }
         }
+
         return index;
     }
 
-    // Fusionne deux listes triées en gardant les doublons (nécessaire pour maxOccurences)
-    static ArrayList<Integer> fusion(ArrayList<Integer> v1, ArrayList<Integer> v2) {
-        ArrayList<Integer> res = new ArrayList<>();
-        int i = 0, j = 0;
-        while (i < v1.size() && j < v2.size()) {
-            if (v1.get(i) < v2.get(j)) {
-                res.add(v1.get(i++));
-            } else {
-                res.add(v2.get(j++));
-            }
-        }
-        while (i < v1.size()) res.add(v1.get(i++));
-        while (j < v2.size()) res.add(v2.get(j++));
-        return res;
-    }
+    /**
+     * Construit la liste des réponses candidates (ÉTAPE 1).
+     *
+     * Une réponse est candidate si :
+     *  → elle contient TOUS les mots significatifs de la question
+     *
+     * Méthode :
+     *  1) On récupère les listes d’IDs pour chaque mot
+     *  2) On fusionne toutes les listes
+     *  3) On garde les IDs apparaissant autant de fois
+     *     qu’il y a de mots significatifs
+     */
+    public static ArrayList<Integer> constructionReponsesCandidates(
+            String question,
+            Index indexThemes,
+            String[] motsOutils) {
 
-    // Retourne les éléments qui apparaissent au moins 'seuil' fois
-    static ArrayList<Integer> maxOccurences(ArrayList<Integer> v, int seuil) {
-        ArrayList<Integer> res = new ArrayList<>();
-        if (v.isEmpty()) return res;
-        
-        // Si le seuil est 0 (question vide ou que des mots outils), on ne retourne rien par sécurité
-        if (seuil <= 0) return res;
+        // Liste de listes d’identifiants
+        ArrayList<ArrayList<Integer>> listes = new ArrayList<>();
 
-        int currentVal = v.get(0);
-        int count = 1;
+        // Découpage de la question
+        StringTokenizer tokenizer =
+                new StringTokenizer(question.toLowerCase(), " .,;:!?");
 
-        for (int i = 1; i < v.size(); i++) {
-            if (v.get(i).equals(currentVal)) {
-                count++;
-            } else {
-                if (count >= seuil) res.add(currentVal);
-                currentVal = v.get(i);
-                count = 1;
-            }
-        }
-        // Vérifier le dernier élément
-        if (count >= seuil) res.add(currentVal);
-
-        return res;
-    }
-
-    // 2. On modifie la recherche des candidats pour utiliser le thésaurus
-    public static ArrayList<Integer> constructionReponsesCandidates(String question, Index indexReponses, ArrayList<String> motsOutils, Thesaurus thesaurus) {
-        ArrayList<String> motsQuestion = decoupeEnMots(question);
-        ArrayList<Integer> listeFusionnee = new ArrayList<>();
         int nbMotsSignificatifs = 0;
 
-        for (String mot : motsQuestion) {
-            // TRANSFORMATION ICI
-            String motCanonique = thesaurus.rechercherSortiePourEntree(mot);
-            
-            if (!existeChaineDicho(motsOutils, motCanonique)) {
+        while (tokenizer.hasMoreTokens()) {
+            String mot = tokenizer.nextToken();
+            mot = Thesaurus.getFormeCanonique(mot);
+
+            // On ignore les mots-outils
+            if (!existeChaineDicho(motsOutils, mot)) {
+
+                // On récupère les réponses contenant ce mot
+                listes.add(indexThemes.rechercherSorties(mot));
                 nbMotsSignificatifs++;
-                ArrayList<Integer> sorties = indexReponses.rechercherSorties(motCanonique);
-                listeFusionnee = fusion(listeFusionnee, sorties);
             }
         }
-        return maxOccurences(listeFusionnee, nbMotsSignificatifs);
+
+        // Fusion de toutes les listes
+        ArrayList<Integer> fusion = new ArrayList<>();
+        for (ArrayList<Integer> l : listes) {
+            fusion.addAll(l);
+        }
+
+        // Sélection finale
+        ArrayList<Integer> resultat = new ArrayList<>();
+
+        for (Integer id : fusion) {
+
+            int compteur = 0;
+            for (Integer x : fusion) {
+                if (id.equals(x)) compteur++;
+            }
+
+            // Le bon ID apparaît autant de fois que de mots significatifs
+            if (compteur == nbMotsSignificatifs && !resultat.contains(id)) {
+                resultat.add(id);
+            }
+        }
+
+        return resultat;
     }
 
-    // --- ETAPE 2 : FORME ---
+    /* ============================================================
+     *  PARTIE 3 — ÉTAPE 2 : GESTION DES FORMES
+     * ============================================================
+     */
 
-    // Calcule la "signature" d'une phrase basée sur ses mots-outils (ex: "le ... a ... été ... par")
-    static String calculForme(String chaine, ArrayList<String> motsOutils) {
-        ArrayList<String> mots = decoupeEnMots(chaine);
-        StringBuilder forme = new StringBuilder();
-        int count = 0;
+    /**
+     * Calcule la forme grammaticale d’une phrase.
+     *
+     * La forme est définie comme :
+     *  → la liste des mots-outils
+     *  → accompagnés de leur position
+     *
+     * Exemple :
+     *  "Qui a inventé le téléphone ?"
+     *  → ["qui_0", "a_1"]
+     */
+    public static ArrayList<String> calculForme(
+            String phrase,
+            String[] motsOutils) {
 
-        for (String mot : mots) {
-            if (count >= NBMOTS_FORME) break;
-            
+        ArrayList<String> forme = new ArrayList<>();
+
+        String[] mots = phrase.toLowerCase().split(" ");
+
+        for (int i = 0; i < mots.length; i++) {
+
+            // Nettoyage du mot (ponctuation)
+            String mot = mots[i].replaceAll("[^a-zàâéèêîôûç]", "");
+
+            // Si c’est un mot-outil, on l’ajoute à la forme
             if (existeChaineDicho(motsOutils, mot)) {
-                if (forme.length() > 0) forme.append(" ");
-                forme.append(mot);
-                count++;
-            } else if (estUnNombre(mot)) {
-                // Pour gérer les dates/chiffres comme forme particulière
-                if (forme.length() > 0) forme.append(" ");
-                forme.append("num"); 
-                count++;
+                forme.add(mot + "_" + i);
             }
         }
-        return forme.toString();
+        return forme;
     }
 
-    // Construit la liste des formes uniques trouvées dans le fichier reponses.txt
-    public static ArrayList<String> constructionTableFormes(ArrayList<String> reponses, ArrayList<String> motsOutils) {
-        ArrayList<String> table = new ArrayList<>();
-        for (String rep : reponses) {
-            String forme = calculForme(rep, motsOutils);
-            // Recherche séquentielle simple (la table n'est pas forcément triée ici selon l'énoncé)
-            boolean existe = false;
-            for (String f : table) {
-                if (f.equals(forme)) {
-                    existe = true;
-                    break;
-                }
-            }
-            if (!existe) table.add(forme);
+    /**
+     * Construit la table des formes à partir du fichier
+     * questions-réponses idéales.
+     *
+     * Chaque ligne du fichier fournit UNE forme possible.
+     */
+    public static ArrayList<ArrayList<String>> constructionTableFormes(
+            String[] questionsReponses,
+            String[] motsOutils) {
+
+        ArrayList<ArrayList<String>> formes = new ArrayList<>();
+
+        for (String ligne : questionsReponses) {
+
+            // Séparation question / réponse
+            String question = ligne.split("\\?")[0];
+
+            // Calcul de la forme de la question
+            formes.add(calculForme(question, motsOutils));
         }
-        return table;
-    }
-    
-    // Helper simple pour trouver l'index d'une chaine dans une liste
-    private static int rechercherIndice(ArrayList<String> liste, String mot) {
-        for(int i=0; i<liste.size(); i++) {
-            if(liste.get(i).equals(mot)) return i;
-        }
-        return -1;
+
+        return formes;
     }
 
-    // Construit l'index : Mots-outils de la question (+position) -> Indices des formes de réponses compatibles
-    public static Index constructionIndexFormes(ArrayList<String> questionsReponses, ArrayList<String> formes, ArrayList<String> motsOutils) {
+    /**
+     * Construit l’index des formes.
+     *
+     * Entrée :
+     *  mot-outil_position
+     *
+     * Sortie :
+     *  identifiant de la forme
+     */
+    public static Index constructionIndexForme(
+            ArrayList<ArrayList<String>> formes) {
+
         Index index = new Index();
 
-        for (String qr : questionsReponses) {
-            int posSep = qr.indexOf("?");
-            if (posSep == -1) continue;
-
-            String question = qr.substring(0, posSep);
-            String reponse = qr.substring(posSep + 1);
-
-            // 1. Quelle est la forme de la réponse idéale ?
-            String formeReponse = calculForme(reponse, motsOutils);
-            int idForme = rechercherIndice(formes, formeReponse);
-
-            if (idForme != -1) {
-                // 2. Indexer cette forme via les mots-outils de la question
-                ArrayList<String> motsQ = decoupeEnMots(question);
-                int posOutil = 0;
-                for (String m : motsQ) {
-                    if (posOutil >= NBMOTS_FORME) break;
-                    
-                    if (existeChaineDicho(motsOutils, m)) {
-                        String cle = m + "_" + posOutil; // Ex: "qui_0", "a_1"
-                        index.ajouterSortieAEntree(cle, idForme);
-                        posOutil++;
-                    }
-                }
+        for (int idForme = 0; idForme < formes.size(); idForme++) {
+            for (String elementForme : formes.get(idForme)) {
+                index.ajouterSortieAEntree(elementForme, idForme);
             }
         }
         return index;
-    }
-
-    public static ArrayList<Integer> selectionReponsesCandidates(String question,
-                                                                 ArrayList<Integer> candidates,
-                                                                 Index indexFormes,
-                                                                 ArrayList<String> reponses,
-                                                                 ArrayList<String> formesReponses,
-                                                                 ArrayList<String> motsOutils) {
-        
-        // 1. Trouver les IDs des formes compatibles avec la question
-        ArrayList<String> motsQ = decoupeEnMots(question);
-        ArrayList<Integer> fusionFormes = new ArrayList<>();
-        int nbOutilsQ = 0;
-
-        for (String m : motsQ) {
-            if (nbOutilsQ >= NBMOTS_FORME) break;
-            if (existeChaineDicho(motsOutils, m)) {
-                String cle = m + "_" + nbOutilsQ;
-                ArrayList<Integer> sorties = indexFormes.rechercherSorties(cle);
-                fusionFormes = fusion(fusionFormes, sorties);
-                nbOutilsQ++;
-            }
-        }
-
-        // On ne garde que les formes qui matchent TOUS les mots outils de la question
-        ArrayList<Integer> idsFormesCompatibles = maxOccurences(fusionFormes, nbOutilsQ);
-
-        // 2. Filtrer les candidats de l'étape 1
-        ArrayList<Integer> resultatsFinaux = new ArrayList<>();
-        
-        for (Integer idRep : candidates) {
-            String texteReponse = reponses.get(idRep);
-            String formeCandidate = calculForme(texteReponse, motsOutils);
-            int idFormeCandidate = rechercherIndice(formesReponses, formeCandidate);
-
-            // On garde si la forme de cette réponse fait partie des formes compatibles
-            // OU si aucune forme compatible n'a été trouvée (fallback, optionnel mais conseillé)
-            if (idsFormesCompatibles.contains(idFormeCandidate)) {
-                resultatsFinaux.add(idRep);
-            }
-        }
-        
-        // Si le filtrage par forme est trop strict et renvoie vide, on peut décider
-        // de renvoyer les candidats de l'étape 1 (mais le sujet demande d'être strict)
-        return resultatsFinaux;
-    }
-
-    public static void sauvegarderDansFichier(String contenu, String nomFichier) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(nomFichier, true))) {
-            writer.write(contenu);
-            writer.newLine();
-        } catch (IOException e) {
-            System.err.println("Erreur d'écriture : " + e.getMessage());
-        }
-    }
-
-    // Nouvelle méthode pour extraire les mots-clés d'une phrase en utilisant le thésaurus
-    public static ArrayList<String> extraireMotsCles(String phrase, ArrayList<String> motsOutils, Thesaurus thesaurus) {
-        ArrayList<String> mots = decoupeEnMots(phrase);
-        ArrayList<String> resultat = new ArrayList<>();
-        for (String m : mots) {
-            String canonique = thesaurus.rechercherSortiePourEntree(m.toLowerCase());
-            if (!existeChaineDicho(motsOutils, canonique)) {
-                resultat.add(canonique);
-            }
-        }
-        return resultat;
     }
 }
