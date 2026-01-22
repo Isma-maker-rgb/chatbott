@@ -1,240 +1,86 @@
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.Scanner;
 
-/**
- * ============================================================
- * CLASSE Chatbot
- * ============================================================
- *
- * Cette classe représente le programme principal du projet.
- *
- * Rôles :
- *  - lancer l’application
- *  - charger les données (réponses, mots-outils)
- *  - gérer le dialogue avec l’utilisateur
- *  - utiliser les index pour produire une réponse pertinente
- *  - apprendre dynamiquement quand il ne sait pas répondre
- *
- * C’est le point d’entrée du programme (méthode main).
- */
 public class Chatbot {
 
-    /* ============================================================
-     *  DONNÉES GLOBALES DU CHATBOT
-     * ============================================================
-     */
+    private static final String MESSAGE_IGNORANCE = "Je ne sais pas.";
+    private static final String MESSAGE_APPRENTISSAGE = "Je vais te l'apprendre.";
+    private static final String MESSAGE_BIENVENUE = "J'attends tes questions de culture générale.";
+    private static final String MESSAGE_QUITTER = "Au revoir.";
+    private static final String MESSAGE_INVITATION = "Je t'écoute.";
+    private static final String MESSAGE_CONFIRMATION = "Très bien, c'est noté.";
 
-    /**
-     * Tableau contenant toutes les réponses connues du chatbot.
-     * Chaque réponse est associée implicitement à son indice.
-     */
-    private static String[] reponses;
+    private static Index indexThemes; // index pour trouver rapidement les réponses à partir des mots NON outils de la question
+    private static Index indexFormes; // index pour trouver rapidement les formes de réponse possibles à partir des mots-outils de la question
 
-    /**
-     * Tableau des mots-outils (articles, prépositions, etc.).
-     * Ces mots n’ont pas de valeur sémantique.
-     */
-    private static String[] motsOutils;
-
-    /**
-     * Index sur le contenu (thèmes).
-     * Associe un mot significatif aux réponses qui le contiennent.
-     */
-    private static Index indexThemes;
-
-    /**
-     * Dernière question posée par l’utilisateur.
-     * Sert à gérer les questions dépendantes du contexte.
-     */
-    private static String derniereQuestion = null;
-
-    /**
-     * Générateur aléatoire utilisé pour varier les réponses.
-     */
-    private static final Random random = new Random();
-
-    /* ============================================================
-     *  MÉTHODE MAIN — POINT D’ENTRÉE DU PROGRAMME
-     * ============================================================
-     */
+    static private ArrayList<String> motsOutils; // vecteur trié des mots outils
+    static private ArrayList<String> reponses; // vecteur des réponses
+    private static ArrayList<String> formesReponses; //vecteur des formes de réponses
+    private static Thesaurus thesaurus; //thésaurus
 
     public static void main(String[] args) {
 
-        /* ===== Chargement des données ===== */
+        // initialisation du vecteur des mots outils
+        motsOutils = Utilitaire.lireMotsOutils("mots-outils.txt");
+        // tri du vecteur des mots outils
+        //...
 
-        // Lecture du fichier contenant les réponses
-        reponses = LectureFichier.lireFichier("reponses.txt");
+        // initialisation du vecteur des réponses
+        reponses = Utilitaire.lireReponses("reponses.txt");
+        //reponses = Utilitaire.lireReponses("mini_reponses.txt");
 
-        // Lecture du fichier contenant les mots-outils
-        motsOutils = LectureFichier.lireFichier("mots-outils.txt");
+        // initialisation du thésaurus (partie 2)
+        //thesaurus = ...
 
-        // Tri indispensable pour la recherche dichotomique
-        Utilitaire.trierChaines(motsOutils);
+        // construction de l'index pour retrouver rapidement les réponses sur leurs thématiques
+        //indexThemes = ...
+        //indexThemes.afficher();
 
-        // Construction de l’index sur le contenu
-        indexThemes =
-                Utilitaire.constructionIndexReponses(reponses, motsOutils);
+        // construction de la table des formes de réponses
+        //formesReponses = ...
+        //System.out.println(formesReponses);
 
-        /* ===== Initialisation du dialogue ===== */
+        // initialisation du vecteur des questions/réponses idéales
+        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
+        //ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("mini_questions-reponses.txt");
 
-        Scanner sc = new Scanner(System.in);
+        // construction de l'index pour retrouver rapidement les formes possibles de réponses à partir des mots outils de la question
+        //indexFormes = ...
+        //indexFormes.afficher();
 
-        System.out.println("Bonjour !");
-        System.out.println("Pose-moi une question de culture générale.");
-        System.out.println("(Tape 'exit' pour quitter)");
+        String reponse = "";
+        String entreeUtilisateur = ""; // la dernière entrée de l'utilisateur
 
-        /* ===== Boucle principale du dialogue ===== */
 
-        while (true) {
-
-            System.out.print("> ");
-
-            // Lecture de la question utilisateur
-            String question = sc.nextLine();
-
-            // Condition de sortie du programme
-            if (question.equalsIgnoreCase("exit")) {
-                break;
-            }
-
-            // Traitement de la question
-            repondre(question, sc);
-        }
-
-        sc.close();
-        System.out.println("Au revoir !");
-    }
-
-    /* ============================================================
-     *  TRAITEMENT D’UNE QUESTION
-     * ============================================================
-     */
-
-    /**
-     * Gère la réponse du chatbot à une question.
-     *
-     * Cette méthode orchestre :
-     *  - la gestion du contexte
-     *  - la recherche des réponses candidates
-     *  - l’apprentissage si nécessaire
-     */
-    private static void repondre(String question, Scanner sc) {
-
-        /* ===== Gestion du contexte ===== */
-
-        // Si la question est incomplète mais dépend du contexte
-        if (estQuestionDeContexte(question) && derniereQuestion != null) {
-
-            // On enrichit la question avec la précédente
-            question = question + " " + derniereQuestion;
-        }
-
-        /* ===== Recherche des réponses candidates ===== */
-
-        ArrayList<Integer> candidates =
-                Utilitaire.constructionReponsesCandidates(
-                        question,
-                        indexThemes,
-                        motsOutils
-                );
-
-        /* ===== Cas où aucune réponse n’est trouvée ===== */
-
-        if (candidates.isEmpty()) {
-
-            // Lancement de l’apprentissage dynamique
-            apprentissage(sc);
-            return;
-        }
-
-        /* ===== Sélection et affichage de la réponse ===== */
-
-        // Choix aléatoire parmi les réponses candidates
-        int indiceChoisi =
-                candidates.get(random.nextInt(candidates.size()));
-
-        System.out.println(reponses[indiceChoisi]);
-
-        // Mise à jour du contexte
-        derniereQuestion = question;
-    }
-
-    /* ============================================================
-     *  GESTION DU CONTEXTE
-     * ============================================================
-     */
-
-    /**
-     * Détermine si une question dépend du contexte précédent.
-     *
-     * Exemple :
-     *  - "Quand ?"
-     *  - "Qui ?"
-     *  - "En quelle année ?"
-     *
-     * @return true si la question est contextuelle
-     */
-    private static boolean estQuestionDeContexte(String question) {
-
-        question = question.toLowerCase().trim();
-
-        return question.startsWith("quand")
-                || question.startsWith("qui")
-                || question.startsWith("en quelle")
-                || question.equals("qui ?")
-                || question.equals("quand ?");
-    }
-
-    /* ============================================================
-     *  APPRENTISSAGE DYNAMIQUE
-     * ============================================================
-     */
-
-    /**
-     * Permet au chatbot d’apprendre une nouvelle réponse.
-     *
-     * Déclenchée lorsque le chatbot ne sait pas répondre.
-     *
-     * Étapes :
-     *  1) demander la réponse à l’utilisateur
-     *  2) l’ajouter au tableau des réponses
-     *  3) reconstruire l’index
-     */
-    private static void apprentissage(Scanner sc) {
-
-        System.out.println("Je ne sais pas répondre à cette question.");
-        System.out.println("Peux-tu m’indiquer la bonne réponse ?");
+        Scanner lecteur = new Scanner(System.in);
+        System.out.println();
         System.out.print("> ");
+        System.out.println(MESSAGE_BIENVENUE);
 
-        // Lecture de la réponse fournie par l’utilisateur
-        String nouvelleReponse = sc.nextLine();
+        do { // on attend des questions
+            System.out.print("> ");
+            entreeUtilisateur = lecteur.nextLine();
+            if (entreeUtilisateur.compareTo(MESSAGE_QUITTER) != 0) { //tant que l'utilisateur ne veut pas arrêter
+                reponse = repondre(entreeUtilisateur);
+                System.out.println("> " + reponse);
+            }
+        } while (entreeUtilisateur.compareToIgnoreCase(MESSAGE_QUITTER) != 0);
 
-        /* ===== Ajout dynamique de la réponse ===== */
 
-        // Création d’un nouveau tableau plus grand
-        String[] nouvellesReponses = new String[reponses.length + 1];
-
-        // Copie des anciennes réponses
-        System.arraycopy(
-                reponses,
-                0,
-                nouvellesReponses,
-                0,
-                reponses.length
-        );
-
-        // Ajout de la nouvelle réponse à la fin
-        nouvellesReponses[reponses.length] = nouvelleReponse;
-
-        // Mise à jour de la référence
-        reponses = nouvellesReponses;
-
-        /* ===== Reconstruction de l’index ===== */
-
-        indexThemes =
-                Utilitaire.constructionIndexReponses(reponses, motsOutils);
-
-        System.out.println("Merci ! J’ai appris quelque chose 😊");
     }
+
+
+    static private String repondre(String question) {
+        //ArrayList<Integer> reponsesCandidates;
+        //ArrayList<Integer> reponsesSelectionnees;
+        int choix = (int) (Math.random() * reponses.size());
+        return (reponses.get(choix));
+    }
+
+    // partie 2
+    static private String repondreEnContexte(String question, String questionPrecedente) {
+        return "";
+    }
+
+
 }
