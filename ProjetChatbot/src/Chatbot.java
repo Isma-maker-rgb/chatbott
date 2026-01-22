@@ -23,7 +23,7 @@ public class Chatbot {
         // initialisation du vecteur des mots outils
         motsOutils = Utilitaire.lireMotsOutils("mots-outils.txt");
         // tri du vecteur des mots outils
-        //...
+        Utilitaire.trierChaines(motsOutils);
 
         // initialisation du vecteur des réponses
         reponses = Utilitaire.lireReponses("reponses.txt");
@@ -33,11 +33,11 @@ public class Chatbot {
         //thesaurus = ...
 
         // construction de l'index pour retrouver rapidement les réponses sur leurs thématiques
-        //indexThemes = ...
+        indexThemes = Utilitaire.constructionIndexReponses(reponses, motsOutils);
         //indexThemes.afficher();
 
         // construction de la table des formes de réponses
-        //formesReponses = ...
+        formesReponses = Utilitaire.constructionTableFormes(reponses, motsOutils);
         //System.out.println(formesReponses);
 
         // initialisation du vecteur des questions/réponses idéales
@@ -45,7 +45,7 @@ public class Chatbot {
         //ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("mini_questions-reponses.txt");
 
         // construction de l'index pour retrouver rapidement les formes possibles de réponses à partir des mots outils de la question
-        //indexFormes = ...
+        indexFormes = Utilitaire.constructionIndexFormes(questionsReponses, formesReponses, motsOutils);
         //indexFormes.afficher();
 
         String reponse = "";
@@ -73,8 +73,26 @@ public class Chatbot {
     static private String repondre(String question) {
         //ArrayList<Integer> reponsesCandidates;
         //ArrayList<Integer> reponsesSelectionnees;
-        int choix = (int) (Math.random() * reponses.size());
-        return (reponses.get(choix));
+        ArrayList<Integer> reponsesCandidates = Utilitaire.constructionReponsesCandidates(question, indexThemes, motsOutils);
+
+        if (reponsesCandidates.isEmpty()) {
+            return MESSAGE_IGNORANCE;
+        }
+
+        // --- ETAPE 2 : Filtrage sur la forme ---
+        ArrayList<Integer> reponsesSelectionnees = Utilitaire.selectionReponsesCandidates(
+                question, reponsesCandidates, indexFormes, reponses, formesReponses, motsOutils);
+
+        // Si l'étape 2 filtre tout, on renvoie "Je ne sais pas" (ou on pourrait renvoyer une réponse de l'étape 1 par défaut)
+        if (reponsesSelectionnees.isEmpty()) {
+            // Optionnel : décommenter ligne suivante pour être plus souple et répondre même si la forme est bizarre
+            // return reponses.get(reponsesCandidates.get(0));
+            return MESSAGE_IGNORANCE;
+        }
+
+        // Choix aléatoire parmi les réponses restantes
+        int choix = (int) (Math.random() * reponsesSelectionnees.size());
+        return reponses.get(reponsesSelectionnees.get(choix));
     }
 
     // partie 2
