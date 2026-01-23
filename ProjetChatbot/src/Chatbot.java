@@ -38,14 +38,14 @@ public class Chatbot {
         // === INITIALISATION ===
         
         // 1. Charger et trier les mots-outils
-        motsOutils = Utilitaire.lireMotsOutils("mots-outils.txt");
+        motsOutils = Utilitaire.lireMotsOutils("../mots-outils.txt");
         Utilitaire.trierChaines(motsOutils);
 
         // 2. Charger toutes les réponses possibles
-        reponses = Utilitaire.lireReponses("reponses.txt");
+        reponses = Utilitaire.lireReponses("../reponses.txt");
 
         // 3. Charger le thésaurus (Partie 2.1)
-        thesaurus = new Thesaurus("thesaurus.txt");
+        thesaurus = new Thesaurus("../thesaurus.txt");
         
         // DEBUG: Décommenter pour voir le contenu du thésaurus
         // thesaurus.afficher();
@@ -65,7 +65,7 @@ public class Chatbot {
         // System.out.println(formesReponses);
 
         // 6. Charger les paires question/réponse idéales
-        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
+        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("../questions-reponses.txt");
 
         // 7. Construire l'index des formes (pour l'Étape 2 - recherche par forme)
         // Permet de savoir quelle forme de réponse correspond à quelle forme de question
@@ -127,7 +127,7 @@ public class Chatbot {
                             Utilitaire.IntegrerNouvelleReponse(nouvelleReponse, reponses, indexThemes, motsOutils);
                             
                             // Sauvegarder dans le fichier pour la persistance
-                            Utilitaire.ecrireFichier("reponses.txt", nouvelleReponse);
+                            Utilitaire.ecrireFichier("../reponses.txt", nouvelleReponse);
                             
                             // Mettre à jour la table des formes si cette forme n'existe pas
                             String forme = Utilitaire.calculForme(nouvelleReponse, motsOutils, thesaurus);
@@ -156,7 +156,7 @@ public class Chatbot {
                             
                             // Sauvegarder dans le fichier pour la persistance
                             String qrPaire = entreeUtilisateur + "?" + nouvelleReponse;
-                            Utilitaire.ecrireFichier("questions-reponses.txt", qrPaire);
+                            Utilitaire.ecrireFichier("../questions-reponses.txt", qrPaire);
                         }
                         
                         reponse = MESSAGE_CONFIRMATION;
