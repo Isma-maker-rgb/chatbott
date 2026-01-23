@@ -1,6 +1,5 @@
-appellent:appelle
+appellent:nomme
 nomment:nomme
-appelle:appelle
 nommer:nomme
 nommé:nomme
 nommée:nomme
