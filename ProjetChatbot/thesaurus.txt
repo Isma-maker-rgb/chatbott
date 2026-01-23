@@ -1,4 +1,4 @@
-s'appellent:nomme
+appellent:nomme
 nomment:nomme
 s:se
 la:le
