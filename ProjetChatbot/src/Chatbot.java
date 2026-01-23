@@ -5,7 +5,7 @@ public class Chatbot {
 
     // Messages constants utilisés par le chatbot
     private static final String MESSAGE_IGNORANCE = "Je ne sais pas.";
-    private static final String MESSAGE_APPRENTISSAGE = "Je vais te l'apprendre.";
+    private static final String MESSAGE_APPRENTISSAGE = "Donne moi la réponse.";
     private static final String MESSAGE_BIENVENUE = "J'attends tes questions de culture générale.";
     private static final String MESSAGE_QUITTER = "Au revoir.";
     private static final String MESSAGE_INVITATION = "Je t'écoute.";
@@ -32,20 +32,23 @@ public class Chatbot {
     // Variable pour stocker la dernière question contenant des mots non-outils (Partie 2.2)
     // Permet de répondre à des questions en contexte comme "Et quand ?" après "Où est né Léonard de Vinci ?"
     private static String derniereQuestionAvecContexte = "";
+    
+    // Variable pour stocker la dernière question qui n'a pas eu de réponse (Partie 2.4)
+    private static String derniereQuestionSansReponse = "";
 
     public static void main(String[] args) {
 
         // === INITIALISATION ===
         
         // 1. Charger et trier les mots-outils
-        motsOutils = Utilitaire.lireMotsOutils("../mots-outils.txt");
+        motsOutils = Utilitaire.lireMotsOutils("mots-outils.txt");
         Utilitaire.trierChaines(motsOutils);
 
         // 2. Charger toutes les réponses possibles
-        reponses = Utilitaire.lireReponses("../reponses.txt");
+        reponses = Utilitaire.lireReponses("reponses.txt");
 
         // 3. Charger le thésaurus (Partie 2.1)
-        thesaurus = new Thesaurus("../thesaurus.txt");
+        thesaurus = new Thesaurus("thesaurus.txt");
         
         // DEBUG: Décommenter pour voir le contenu du thésaurus
         // thesaurus.afficher();
@@ -65,7 +68,7 @@ public class Chatbot {
         // System.out.println(formesReponses);
 
         // 6. Charger les paires question/réponse idéales
-        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("../questions-reponses.txt");
+        ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
 
         // 7. Construire l'index des formes (pour l'Étape 2 - recherche par forme)
         // Permet de savoir quelle forme de réponse correspond à quelle forme de question
@@ -90,6 +93,71 @@ public class Chatbot {
             
             if (entreeUtilisateur.compareToIgnoreCase(MESSAGE_QUITTER) != 0) {
                 
+                // === PARTIE 2.4: VÉRIFIER SI L'UTILISATEUR VEUT APPRENDRE AU CHATBOT ===
+                // Si l'utilisateur dit "Je vais te l'apprendre" après un "Je ne sais pas"
+                if (!derniereQuestionSansReponse.isEmpty() && 
+                    (entreeUtilisateur.equalsIgnoreCase("Je vais te l'apprendre.") || 
+                     entreeUtilisateur.equalsIgnoreCase("Je vais te l'apprendre"))) {
+                    
+                    // Le chatbot demande la réponse
+                    System.out.println("> " + MESSAGE_APPRENTISSAGE);
+                    System.out.print("> ");
+                    String nouvelleReponse = lecteur.nextLine();
+                    
+                    // Utiliser la dernière question sans réponse
+                    String question = derniereQuestionSansReponse;
+                    
+                    // Vérifier si cette réponse existe déjà dans la base
+                    boolean repExiste = Utilitaire.reponseExiste(nouvelleReponse, indexThemes, reponses, motsOutils, thesaurus);
+                    
+                    if (!repExiste) {
+                        // Cas 1 ou 3: La réponse n'existe pas encore
+                        
+                        // Ajouter la réponse au vecteur et à l'index
+                        Utilitaire.IntegrerNouvelleReponse(nouvelleReponse, reponses, indexThemes, motsOutils);
+                        
+                        // Sauvegarder dans le fichier pour la persistance
+                        Utilitaire.ecrireFichier("reponses.txt", nouvelleReponse);
+                        
+                        // Mettre à jour la table des formes si cette forme n'existe pas
+                        String forme = Utilitaire.calculForme(nouvelleReponse, motsOutils, thesaurus);
+                        boolean formeExiste = false;
+                        for (String f : formesReponses) {
+                            if (f.equals(forme)) {
+                                formeExiste = true;
+                                break;
+                            }
+                        }
+                        if (!formeExiste) {
+                            formesReponses.add(forme);
+                        }
+                    }
+                    
+                    // Vérifier si la forme question/réponse existe déjà
+                    boolean qrExiste = Utilitaire.formeQuestionReponseExiste(question, nouvelleReponse, 
+                                                                              indexFormes, formesReponses, motsOutils, thesaurus);
+                    
+                    if (!qrExiste) {
+                        // Cas 1 ou 2: La forme question/réponse n'existe pas
+                        
+                        // Ajouter la nouvelle question/réponse à l'index des formes
+                        Utilitaire.integrerNouvelleQuestionReponse(question, nouvelleReponse, 
+                                                                   formesReponses, indexFormes, motsOutils, thesaurus);
+                        
+                        // Sauvegarder dans le fichier pour la persistance
+                        String qrPaire = question + "?" + nouvelleReponse;
+                        Utilitaire.ecrireFichier("questions-reponses.txt", qrPaire);
+                    }
+                    
+                    reponse = MESSAGE_CONFIRMATION;
+                    
+                    // Réinitialiser la question sans réponse
+                    derniereQuestionSansReponse = "";
+                    
+                    System.out.println("> " + reponse);
+                    continue;
+                }
+                
                 // === PARTIE 2.2.c: DÉCIDER COMMENT RÉPONDRE ===
                 
                 // Vérifier si la question ne contient QUE des mots-outils
@@ -108,58 +176,12 @@ public class Chatbot {
                     // Enregistrer cette question comme contexte pour la prochaine fois
                     derniereQuestionAvecContexte = entreeUtilisateur;
                     
-                    // === PARTIE 2.4: APPRENTISSAGE INTERACTIF ===
-                    
-                    // Si le chatbot ne connaît pas la réponse, proposer d'apprendre
+                    // Si le chatbot ne sait pas, enregistrer la question pour un éventuel apprentissage
                     if (reponse.equals(MESSAGE_IGNORANCE)) {
-                        System.out.println("> " + reponse);
-                        System.out.println("> " + MESSAGE_APPRENTISSAGE);
-                        System.out.print("> ");
-                        String nouvelleReponse = lecteur.nextLine();
-                        
-                        // Vérifier si cette réponse existe déjà dans la base
-                        boolean repExiste = Utilitaire.reponseExiste(nouvelleReponse, indexThemes, reponses, motsOutils, thesaurus);
-                        
-                        if (!repExiste) {
-                            // Cas 1 ou 3: La réponse n'existe pas encore
-                            
-                            // Ajouter la réponse au vecteur et à l'index
-                            Utilitaire.IntegrerNouvelleReponse(nouvelleReponse, reponses, indexThemes, motsOutils);
-                            
-                            // Sauvegarder dans le fichier pour la persistance
-                            Utilitaire.ecrireFichier("../reponses.txt", nouvelleReponse);
-                            
-                            // Mettre à jour la table des formes si cette forme n'existe pas
-                            String forme = Utilitaire.calculForme(nouvelleReponse, motsOutils, thesaurus);
-                            boolean formeExiste = false;
-                            for (String f : formesReponses) {
-                                if (f.equals(forme)) {
-                                    formeExiste = true;
-                                    break;
-                                }
-                            }
-                            if (!formeExiste) {
-                                formesReponses.add(forme);
-                            }
-                        }
-                        
-                        // Vérifier si la forme question/réponse existe déjà
-                        boolean qrExiste = Utilitaire.formeQuestionReponseExiste(entreeUtilisateur, nouvelleReponse, 
-                                                                                  indexFormes, formesReponses, motsOutils, thesaurus);
-                        
-                        if (!qrExiste) {
-                            // Cas 1 ou 2: La forme question/réponse n'existe pas
-                            
-                            // Ajouter la nouvelle question/réponse à l'index des formes
-                            Utilitaire.integrerNouvelleQuestionReponse(entreeUtilisateur, nouvelleReponse, 
-                                                                       formesReponses, indexFormes, motsOutils, thesaurus);
-                            
-                            // Sauvegarder dans le fichier pour la persistance
-                            String qrPaire = entreeUtilisateur + "?" + nouvelleReponse;
-                            Utilitaire.ecrireFichier("../questions-reponses.txt", qrPaire);
-                        }
-                        
-                        reponse = MESSAGE_CONFIRMATION;
+                        derniereQuestionSansReponse = entreeUtilisateur;
+                    } else {
+                        // Si on a trouvé une réponse, réinitialiser
+                        derniereQuestionSansReponse = "";
                     }
                 }
                 
