@@ -30,14 +30,14 @@ public class Chatbot {
         //reponses = Utilitaire.lireReponses("mini_reponses.txt");
 
         // initialisation du thésaurus (partie 2)
-        //thesaurus = ...
+        thesaurus = new Thesaurus("thesaurus.txt");
 
         // construction de l'index pour retrouver rapidement les réponses sur leurs thématiques
-        indexThemes = Utilitaire.constructionIndexReponses(reponses, motsOutils);
+        indexThemes = Utilitaire.constructionIndexReponses(reponses, motsOutils, thesaurus);
         //indexThemes.afficher();
 
         // construction de la table des formes de réponses
-        formesReponses = Utilitaire.constructionTableFormes(reponses, motsOutils);
+        formesReponses = Utilitaire.constructionTableFormes(reponses, motsOutils, thesaurus);
         //System.out.println(formesReponses);
 
         // initialisation du vecteur des questions/réponses idéales
@@ -45,7 +45,7 @@ public class Chatbot {
         //ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("mini_questions-reponses.txt");
 
         // construction de l'index pour retrouver rapidement les formes possibles de réponses à partir des mots outils de la question
-        indexFormes = Utilitaire.constructionIndexFormes(questionsReponses, formesReponses, motsOutils);
+        indexFormes = Utilitaire.constructionIndexFormes(questionsReponses, formesReponses, motsOutils, thesaurus);
         //indexFormes.afficher();
 
         String reponse = "";
@@ -73,14 +73,14 @@ public class Chatbot {
     static private String repondre(String question) {
         //ArrayList<Integer> reponsesCandidates;
         //ArrayList<Integer> reponsesSelectionnees;
-        ArrayList<Integer> reponsesCandidates = Utilitaire.constructionReponsesCandidates(question, indexThemes, motsOutils);
+        ArrayList<Integer> reponsesCandidates = Utilitaire.constructionReponsesCandidates(question, indexThemes, motsOutils, thesaurus);
 
         if (reponsesCandidates.isEmpty()) {
             return MESSAGE_IGNORANCE;
         }
 
         ArrayList<Integer> reponsesSelectionnees = Utilitaire.selectionReponsesCandidates(
-                question, reponsesCandidates, indexFormes, reponses, formesReponses, motsOutils);
+                question, reponsesCandidates, indexFormes, reponses, formesReponses, motsOutils, thesaurus);
 
         // Si l'étape 2 filtre tout, on renvoie "Je ne sais pas" (ou on pourrait renvoyer une réponse de l'étape 1 par défaut)
         if (reponsesSelectionnees.isEmpty()) {
