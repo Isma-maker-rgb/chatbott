@@ -117,13 +117,6 @@ public class Utilitaire {
     }
 
 
-    static private boolean existeChaine(ArrayList<String> mots, String mot) {
-        //{}=>  {recherche séquentielle de mot dans mots
-        // résultat =  true si trouvé et false sinon }
-        return false;
-    }
-
-
     static private boolean existeChaineDicho(ArrayList<String> lesChaines, String chaine) {
         //{lesChaines (triée dans l'ordre lexicographique)}=>  {recherche dichotomique de chaine dans lesChaines
         // résultat =  true si trouvé et false sinon }
@@ -138,11 +131,49 @@ public class Utilitaire {
         return false;
     }
 
+    // =========================================
+    // PARTIE 2.2.a: VÉRIFIER SI QUESTION NE CONTIENT QUE DES MOTS-OUTILS
+    // =========================================
     static public boolean entierementInclus(ArrayList<String> mots, String question) {
         //{mots est trié dans l'ordre lexicographique}=>
         // résultat = true si tous les mots de questions sont dans mots, false sinon
-        // remarque : utilise decoupeEnMots et existeChaineDicho}
-        return false;
+        // remarque : utilise decoupeEnMots et existeChaineDicho
+        
+        // Découper la question en mots individuels
+        ArrayList<String> motsQuestion = decoupeEnMots(question);
+        
+        // Si la question est vide, retourner false
+        if (motsQuestion.isEmpty()) {
+            return false;
+        }
+        
+        // Vérifier que CHAQUE mot de la question est dans mots (qui contient les mots-outils)
+        // Si on trouve un seul mot qui n'est PAS un mot-outil, on retourne false
+        for (String mot : motsQuestion) {
+            if (!existeChaineDicho(mots, mot)) {
+                // Ce mot n'est pas un mot-outil
+                return false;
+            }
+        }
+        
+        // Tous les mots sont des mots-outils
+        return true;
+    }
+
+    // =========================================
+    // MÉTHODE UTILITAIRE (non utilisée mais demandée)
+    // =========================================
+    static private boolean existeChaine(ArrayList<String> mots, String mot) {
+        //{}=>  {recherche séquentielle de mot dans mots
+        // résultat =  true si trouvé et false sinon }
+        
+        // Parcourir tous les mots
+        for (String m : mots) {
+            if (m.equals(mot)) {
+                return true;  // Trouvé
+            }
+        }
+        return false;  // Non trouvé
     }
 
 
