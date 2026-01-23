@@ -44,7 +44,6 @@ public class Chatbot {
         // 2. Charger toutes les réponses possibles
         reponses = Utilitaire.lireReponses("reponses.txt");
 
-<<<<<<< HEAD
         // 3. Charger le thésaurus (Partie 2.1)
         thesaurus = new Thesaurus("thesaurus.txt");
         
@@ -64,34 +63,16 @@ public class Chatbot {
         
         // DEBUG: Décommenter pour voir les formes
         // System.out.println(formesReponses);
-=======
-        // initialisation du thésaurus (partie 2)
-        thesaurus = new Thesaurus("thesaurus.txt");
-
-        // construction de l'index pour retrouver rapidement les réponses sur leurs thématiques
-        indexThemes = Utilitaire.constructionIndexReponses(reponses, motsOutils, thesaurus);
-        //indexThemes.afficher();
-
-        // construction de la table des formes de réponses
-        formesReponses = Utilitaire.constructionTableFormes(reponses, motsOutils, thesaurus);
-        //System.out.println(formesReponses);
->>>>>>> be98aa6948769fff57231e8e17d870e0e0a88f56
 
         // 6. Charger les paires question/réponse idéales
         ArrayList<String> questionsReponses = Utilitaire.lireQuestionsReponses("questions-reponses.txt");
 
-<<<<<<< HEAD
         // 7. Construire l'index des formes (pour l'Étape 2 - recherche par forme)
         // Permet de savoir quelle forme de réponse correspond à quelle forme de question
         indexFormes = Utilitaire.constructionIndexFormes(questionsReponses, formesReponses, motsOutils, thesaurus);
         
         // DEBUG: Décommenter pour voir l'index des formes
         // indexFormes.afficher();
-=======
-        // construction de l'index pour retrouver rapidement les formes possibles de réponses à partir des mots outils de la question
-        indexFormes = Utilitaire.constructionIndexFormes(questionsReponses, formesReponses, motsOutils, thesaurus);
-        //indexFormes.afficher();
->>>>>>> be98aa6948769fff57231e8e17d870e0e0a88f56
 
         // === BOUCLE PRINCIPALE ===
         
@@ -188,16 +169,10 @@ public class Chatbot {
     }
 
     static private String repondre(String question) {
-<<<<<<< HEAD
         // === ÉTAPE 1: TROUVER LES RÉPONSES CANDIDATES (par contenu) ===
         // On cherche toutes les réponses qui contiennent TOUS les mots non-outils de la question
         ArrayList<Integer> reponsesCandidates = Utilitaire.constructionReponsesCandidates(
             question, indexThemes, motsOutils, thesaurus);
-=======
-        //ArrayList<Integer> reponsesCandidates;
-        //ArrayList<Integer> reponsesSelectionnees;
-        ArrayList<Integer> reponsesCandidates = Utilitaire.constructionReponsesCandidates(question, indexThemes, motsOutils, thesaurus);
->>>>>>> be98aa6948769fff57231e8e17d870e0e0a88f56
 
         if (reponsesCandidates.isEmpty()) {
             // Aucune réponse ne contient tous les mots de la question
