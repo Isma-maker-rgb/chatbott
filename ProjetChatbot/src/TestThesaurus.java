@@ -11,14 +11,14 @@ public class TestThesaurus {
         
         // 1. Charger tous les composants
         System.out.println("1. Chargement des composants...");
-        ArrayList<String> motsOutils = Utilitaire.lireMotsOutils("mots-outils.txt");
+        ArrayList<String> motsOutils = Utilitaire.lireMotsOutils("../mots-outils.txt");
         Utilitaire.trierChaines(motsOutils);
         System.out.println("   ✓ Mots-outils chargés: " + motsOutils.size() + " mots");
         
-        ArrayList<String> reponses = Utilitaire.lireReponses("reponses.txt");
+        ArrayList<String> reponses = Utilitaire.lireReponses("../reponses.txt");
         System.out.println("   ✓ Réponses chargées: " + reponses.size() + " réponses");
         
-        Thesaurus thesaurus = new Thesaurus("thesaurus.txt");
+        Thesaurus thesaurus = new Thesaurus("../thesaurus.txt");
         System.out.println("   ✓ Thésaurus chargé\n");
         
         // 2. Test du thésaurus avec les mots de la question problématique
